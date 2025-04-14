@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class MovieApiController {
 
+    //test
     private final MovieService movieService;
 
     @GetMapping("/")
