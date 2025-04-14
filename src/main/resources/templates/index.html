@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineStream - Watch Movies Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom CSS for scrollbar and animations */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a202c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+        .movie-card:hover .movie-poster {
+            transform: scale(1.05);
+        }
+        .movie-poster {
+            transition: transform 0.3s ease;
+        }
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+<!-- Navbar -->
+<nav class="bg-gray-800 shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+            <!-- Logo -->
+            <div class="flex items-center space-x-4">
+                <a th:href="@{/}" class="flex items-center">
+                    <i class="fas fa-film text-purple-500 text-2xl"></i>
+                    <span class="ml-2 text-xl font-bold text-white">CineStream</span>
+                </a>
+            </div>
+
+            <!-- Primary Nav -->
+            <div class="hidden md:flex items-center space-x-1">
+                <a th:href="@{/}" class="px-3 py-2 rounded-md text-sm font-medium text-white bg-gray-900">Home</a>
+                <a th:href="@{/movies}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">Movies</a>
+                <a th:href="@{/tv-shows}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">TV Shows</a>
+                <a th:href="@{/genres}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">Genres</a>
+                <a th:href="@{/new-releases}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">New Releases</a>
+            </div>
+
+            <!-- Search and User -->
+            <div class="flex items-center space-x-3">
+                <div class="relative hidden md:block">
+                    <form th:action="@{/search}" method="get">
+                        <input type="text" name="query" placeholder="Search movies..." class="bg-gray-700 text-white px-4 py-1 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-64">
+                        <button type="submit" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="dropdown relative">
+                    <button class="flex items-center space-x-1 focus:outline-none">
+                        <img th:src="${userAvatar ?: 'https://randomuser.me/api/portraits/men/32.jpg'}" alt="User" class="w-8 h-8 rounded-full border-2 border-purple-500">
+                        <span class="hidden md:inline text-sm font-medium" th:text="${userName ?: 'John'}"></span>
+                        <i class="fas fa-chevron-down text-xs hidden md:inline"></i>
+                    </button>
+                    <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50 hidden">
+                        <a th:href="@{/profile}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">Profile</a>
+                        <a th:href="@{/watchlist}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">Watchlist</a>
+                        <a th:href="@{/settings}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">Settings</a>
+                        <div class="border-t border-gray-700"></div>
+                        <a th:href="@{/logout}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">Sign out</a>
+                    </div>
+                </div>
+
+                <button id="mobile-menu-button" class="md:hidden text-gray-300 hover:text-white focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="md:hidden hidden bg-gray-800 px-2 pt-2 pb-3 space-y-1">
+        <div class="relative mb-2">
+            <form th:action="@{/search}" method="get">
+                <input type="text" name="query" placeholder="Search movies..." class="bg-gray-700 text-white px-4 py-2 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full">
+                <button type="submit" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+        <a th:href="@{/}" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-gray-900">Home</a>
+        <a th:href="@{/movies}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Movies</a>
+        <a th:href="@{/tv-shows}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">TV Shows</a>
+        <a th:href="@{/genres}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Genres</a>
+        <a th:href="@{/new-releases}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">New Releases</a>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<div class="relative h-96 bg-gradient-to-r from-gray-900 to-gray-800 overflow-hidden">
+    <div class="absolute inset-0 bg-black opacity-50"></div>
+    <div class="absolute inset-0 flex items-center px-8 md:px-16">
+        <div class="max-w-2xl z-10 fade-in">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4" th:text="${featuredMovie?.name ?: 'Avengers: Endgame'}"></h1>
+            <div class="flex items-center mb-4">
+                <span class="bg-yellow-500 text-yellow-900 text-xs font-bold px-2 py-1 rounded mr-2" th:text="${featuredMovie?.rating ?: 'IMDb 8.4'}"></span>
+                <span class="text-gray-300 text-sm" th:text="${featuredMovie?.year} + ' • ' + (${featuredMovie?.duration ?: '3h 1m'}) + ' • ' + (${featuredMovie?.genres ?: 'Action, Adventure, Sci-Fi'})"></span>
+            </div>
+            <p class="text-gray-300 mb-6" th:text="${featuredMovie?.description ?: 'After the devastating events...'}"></p>
+            <div class="flex space-x-3">
+                <a th:href="@{/movies/watch/{id}(id=${featuredMovie?.id})}" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full font-medium flex items-center">
+                    <i class="fas fa-play mr-2"></i> Watch Now
+                </a>
+                <button class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-full font-medium flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Add to List
+                </button>
+            </div>
+        </div>
+    </div>
+    <img th:src="${featuredMovie?.posterUrl ?: 'https://image.tmdb.org/t/p/original/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg'}" alt="Featured Movie" class="w-full h-full object-cover">
+</div>
+
+<!-- Main Content -->
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Trending Now Section -->
+    <section class="mb-12">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Trending Now</h2>
+            <a th:href="@{/movies/trending}" class="text-purple-500 hover:text-purple-400 text-sm font-medium">View All</a>
+        </div>
+        <div id="trending-movies" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div th:each="movie : ${trendingMovies}" class="movie-card relative rounded-lg overflow-hidden shadow-lg">
+                <img th:src="${movie.posterUrl}" th:alt="${movie.name}" class="movie-poster w-full h-64 object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-75 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div class="text-center">
+                        <h3 class="text-white text-lg font-semibold mb-2" th:text="${movie.name}"></h3>
+                        <div class="flex justify-center space-x-2">
+                            <a th:href="@{/movies/watch/{id}(id=${movie.id})}" class="watch-button bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-play mr-1"></i> Watch
+                            </a>
+                            <button class="list-button bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-plus mr-1"></i> List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Movies Section -->
+    <section class="mb-12">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Popular Movies</h2>
+            <a th:href="@{/movies/popular}" class="text-purple-500 hover:text-purple-400 text-sm font-medium">View All</a>
+        </div>
+        <div id="popular-movies" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div th:each="movie : ${popularMovies}" class="movie-card relative rounded-lg overflow-hidden shadow-lg">
+                <img th:src="${movie.posterUrl}" th:alt="${movie.name}" class="movie-poster w-full h-64 object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-75 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div class="text-center">
+                        <h3 class="text-white text-lg font-semibold mb-2" th:text="${movie.name}"></h3>
+                        <div class="flex justify-center space-x-2">
+                            <a th:href="@{/movies/watch/{id}(id=${movie.id})}" class="watch-button bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-play mr-1"></i> Watch
+                            </a>
+                            <button class="list-button bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-plus mr-1"></i> List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Footer -->
+<footer class="bg-gray-800 text-gray-400 py-8">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-white text-lg font-bold mb-4">CineStream</h3>
+                <p class="text-sm">The best place to watch your favorite movies and TV shows online with high quality streaming.</p>
+            </div>
+            <div>
+                <h4 class="text-white text-md font-bold mb-4">Navigation</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a th:href="@{/}" class="hover:text-white">Home</a></li>
+                    <li><a th:href="@{/movies}" class="hover:text-white">Movies</a></li>
+                    <li><a th:href="@{/tv-shows}" class="hover:text-white">TV Shows</a></li>
+                    <li><a th:href="@{/genres}" class="hover:text-white">Genres</a></li>
+                    <li><a th:href="@{/new-releases}" class="hover:text-white">New Releases</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white text-md font-bold mb-4">Legal</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a th:href="@{/terms}" class="hover:text-white">Terms of Service</a></li>
+                    <li><a th:href="@{/privacy}" class="hover:text-white">Privacy Policy</a></li>
+                    <li><a th:href="@{/dmca}" class="hover:text-white">DMCA</a></li>
+                    <li><a th:href="@{/contact}" class="hover:text-white">Contact Us</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white text-md font-bold mb-4">Connect With Us</h4>
+                <div class="flex space-x-4 mb-4">
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-youtube"></i></a>
+                </div>
+                <p class="text-xs">Subscribe to our newsletter for updates</p>
+                <form th:action="@{/subscribe}" method="post" class="mt-2 flex">
+                    <input type="email" name="email" placeholder="Your email" class="bg-gray-700 text-white px-3 py-2 text-sm rounded-l focus:outline-none w-full">
+                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 text-sm rounded-r">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="border-t border-gray-700 mt-8 pt-6 text-sm text-center">
+            <p>© 2025 CineStream. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-button').addEventListener('click', function() {
+        const menu = document.getElementById('mobile-menu');
+        menu.classList.toggle('hidden');
+    });
+
+    // Hàm fetch dữ liệu phim từ API
+    async function fetchMovies(endpoint, containerId) {
+        try {
+            const response = await fetch(endpoint); // Thay bằng URL API thực tế, ví dụ: 'https://your-api.com/movies/trending'
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const result = await response.json();
+            if (result.status === 200) {
+                displayMovies(result.data.items, containerId);
+            } else {
+                throw new Error(result.message || 'Failed to fetch movies');
+            }
+        } catch (error) {
+            console.error('Error fetching movies:', error);
+            document.getElementById(containerId).innerHTML = '<p class="text-red-500">Failed to load movies.</p>';
+        }
+    }
+
+    // Hàm hiển thị phim lên giao diện
+    function displayMovies(movies, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = ''; // Xóa nội dung hiện tại
+
+        movies.forEach(movie => {
+            const movieCard = document.createElement('div');
+            movieCard.className = 'movie-card relative rounded-lg overflow-hidden shadow-lg';
+            movieCard.innerHTML = `
+                <img src="${movie.posterUrl}" alt="${movie.name}" class="movie-poster w-full h-64 object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-75 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div class="text-center">
+                        <h3 class="text-white text-lg font-semibold mb-2">${movie.name}</h3>
+                        <div class="flex justify-center space-x-2">
+                            <a href="/movies/watch/${encodeURIComponent(movie.name)}" class="watch-button bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-play mr-1"></i> Watch
+                            </a>
+                            <button class="list-button bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-plus mr-1"></i> List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(movieCard);
+        });
+
+        // Gắn lại sự kiện cho các movie card mới
+        attachMovieCardEvents();
+    }
+
+    // Gắn sự kiện cho movie cards
+    function attachMovieCardEvents() {
+        const movieCards = document.querySelectorAll('.movie-card');
+        movieCards.forEach(card => {
+            const poster = card.querySelector('.movie-poster');
+            card.addEventListener('mouseenter', () => {
+                poster.style.transform = 'scale(1.05)';
+            });
+            card.addEventListener('mouseleave', () => {
+                poster.style.transform = 'scale(1)';
+            });
+        });
+
+        // Watch button functionality
+        const watchButtons = document.querySelectorAll('.watch-button');
+        watchButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const movieTitle = this.closest('.absolute').querySelector('h3').textContent;
+                alert('Now playing: ' + movieTitle);
+            });
+        });
+
+        // Add to list functionality
+        const listButtons = document.querySelectorAll('.list-button');
+        listButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const movieTitle = this.closest('.absolute').querySelector('h3').textContent;
+                alert('Added to your list: ' + movieTitle);
+            });
+        });
+    }
+
+    // Fetch dữ liệu khi trang tải
+    document.addEventListener('DOMContentLoaded', () => {
+        // Thay các URL này bằng endpoint API thực tế của bạn
+        fetchMovies('http://localhost:8080/api/v1/movies/', 'trending-movies');
+        fetchMovies('http://localhost:8080/api/v1/movies/', 'popular-movies');
+        attachMovieCardEvents();
+    });
+</script>
+</body>
+</html>
